@@ -6,6 +6,8 @@ Created on Oct 16, 2013
 import sys
 from socket import *
 
+def parseCommandLine():
+    
 if __name__ == '__main__':
     serverHost = 'localhost'
     serverPort = 50007
@@ -13,16 +15,17 @@ if __name__ == '__main__':
     message = [b'Hello Network World']
     
     if len(sys.argv) > 1:
-        serverHost = sys.argv[1]
+        filePath = sys.argv[1]
         if len(sys.argv) > 2:
             message = (x.encode() for x in sys.argv[2:])
     
-    sockObj = socket(AF_INET, SOCK_STREAM)
-    sockObj.connect((serverHost, serverPort))
+    socketObj = socket(AF_INET, SOCK_STREAM)
+    socketObj.connect((serverHost, serverPort))
     
-    for line in message:
-        sockObj.send(line)
-        data = sockObj.recv(1024)
-        print('Client received:', data)
+    while True:
+        for line in message:
+            socketObj.send(line)
+            data = socketObj.recv(1024)
+            print 'Client received:', data
         
-    sockObj.close()
+    socketObj.close()
