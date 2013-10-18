@@ -15,10 +15,12 @@ if __name__ == '__main__':
     
     while True:
         connection, address = sockObj.accept()
-        print('Serer connected by', address)
+        print('Server connected by', address)
         while True:
             data = connection.recv(1024)
-            if not data: break
-            connection.send(b'Echo=>' + data)
+            if not data: 
+                break
+            if data == 'join':
+                connection.send('xxxxx xxxxx')
         connection.close()
             
