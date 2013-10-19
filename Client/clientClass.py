@@ -13,24 +13,38 @@ class Client:
         '''
         constructor to initialize the client
         '''
-        self.serverHost = host
-        self.serverPort = port
+        self.myAddress = (host, port)
+        self.serverHost = 'localhost'
+        self.serverPort = 50007
         self.neighbour = []
         
     def isConfirmed(self, address, sockObj):  
+
+        message = 'join'
+        
         try:
             sockObj.connect(address)   #connect to the neighbor
         except error:
             print "fail to connect peer"   
-    
+        
+        sockObj.send(message)    
+        
+        while True:
+            response = sockObj.recv(1024)
+            
+            if response == 'success':
+                sockObj.close()
+                return True
+            else:
+                return False
         
     def join(self):
+
         '''
         join the P2P system
         '''
         request = 'join'                                    #join request
-        sockObj = socket(AF_INET, SOCK_STREAM)              #initialize the socket object
-        
+        sockObj = socket(AF_INET, SOCK_STREAM)
         try:
             sockObj.connect((self.serverHost, self.serverPort)) #connect to the server
         except error:
@@ -59,8 +73,26 @@ class Client:
         '''
         main function
         '''
-        self.sockObj = socket(AF_INET, SOCK_STREAM)              #initialize the socket object
-        self.sockObj.connect((self.serverHost, self.serverPort)) #connect to the server
+        sockObj = socket(AF_INET, SOCK_STREAM)              #initialize the socket object
+        
+        if self.join():
+            sockObj.bind(self.myAddress)                        #bind it to client's address
+            sockObj.listen(5)                               #start to listen the coming message
+            print "join the P2P system successfully"
+            
+        while True:
+            connection, address = sockObj.accept()
+            print "Client connected " , address
+            
+            while True:
+                data = connection.recv(1024)
+                
+                if not data: break
+                else:
+                    if data == 'join':
+                        self.neighbour.append(address)                        
+                        connection.send('success') 
+            
     def parseCommandLine(self):
         pass
 
