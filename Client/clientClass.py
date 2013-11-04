@@ -3,19 +3,22 @@ Created on Oct 17, 2013
 
 @author: christopherhuang
 '''
+import random, thread
 from socket import *
 
 class Client:
     '''
     class for client. It contains client's attributes and methods
     '''
-    def __init__(self, host, port):
+    def __init__(self, arg):
         '''
         constructor to initialize the client
         '''
-        self.myAddress = (host, port)
-        self.serverHost = 'localhost'
-        self.serverPort = 50007
+        print arg
+        self.filePath = arg[1]
+        self.myAddress = (gethostname(), 50008)
+        self.serverHost = arg[2]
+        self.serverPort = int(arg[3])
         self.neighbour = []                     #neighbour list
         
     def isConfirmed(self, address):  
@@ -50,7 +53,7 @@ class Client:
         try:
             sockObj.connect((self.serverHost, self.serverPort)) #connect to the server
         except error:
-            print 'connection error'                        #if the connection fails
+            print error                        #if the connection fails
             return False                                    #return false
         
         sockObj.send(request)                               #send join request
@@ -71,21 +74,32 @@ class Client:
                     return True                             #join successfully
                 else:
                     return False
-    
-                   
+                
+    def handleService(self):
+        '''
+        Handle the service request such as share and get from console
+        '''
+        while True:
+            prompt = "p2p system"
+                     
+            request = raw_input(prompt)
+            
+            if request == 'q': break
+                
     def main(self):
 
         '''
         main function
         '''
         sockObj = socket(AF_INET, SOCK_STREAM)              #initialize the socket object
-        
-        if self.join():
-            sockObj.bind(self.myAddress)                        #bind it to client's address
-            sockObj.listen(5)                               #start to listen the coming message
+        if self.join():                                     #request to join the system
+            sockObj.bind(self.myAddress)                    #bind it to client's address
+            sockObj.listen(5)                               #start to listen the coming message            
             print "join the P2P system successfully"
             print "waiting"
             print self.neighbour
+            
+            thread.start_new_thread(self.handleService, ())
         while True:
             connection, address = sockObj.accept()
             print "Client connected " , address
@@ -99,7 +113,5 @@ class Client:
                         self.neighbour.append(address)                        
                         connection.send('success') 
             
-    def parseCommandLine(self):
-        pass
 
         
