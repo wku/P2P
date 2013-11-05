@@ -5,6 +5,7 @@ Created on Oct 17, 2013
 '''
 import random, thread
 from socket import *
+from subprocess import call
 
 class Client:
     '''
@@ -74,7 +75,9 @@ class Client:
                     return True                             #join successfully
                 else:
                     return False
-                
+    def listFile(self):
+        call(["ls", self.filePath])
+        
     def handleService(self):
         '''
         Handle the service request such as share and get from console
@@ -84,7 +87,10 @@ class Client:
                      
             request = raw_input(prompt)
             
-            if request == 'q': break
+            if request == 'q':
+                break
+            elif request == 'list':
+                self.listFile()
                 
     def main(self):
 
@@ -113,5 +119,5 @@ class Client:
                         self.neighbour.append(address)                        
                         connection.send('success') 
             
-
+        sockObj.close()
         
