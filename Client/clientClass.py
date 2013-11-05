@@ -3,7 +3,7 @@ Created on Oct 17, 2013
 
 @author: christopherhuang
 '''
-import random, thread
+import random, thread, sys
 from socket import *
 from subprocess import call
 
@@ -21,10 +21,11 @@ class Client:
         self.serverHost = arg[2]
         self.serverPort = int(arg[3])
         self.neighbour = []                     #neighbour list
+        self.signal = False
         
     def isConfirmed(self, address):  
         sockObj = socket(AF_INET, SOCK_STREAM)
-        message = 'join'
+        message = 'join' + ' ' + str(self.myAddress[1])     #send the listening port number
         
         try:
             print address
@@ -76,7 +77,19 @@ class Client:
                 else:
                     return False
     def listFile(self):
+        '''
+        list files in the shared directory
+        '''
         call(["ls", self.filePath])
+        
+    def quit(self):
+        '''
+        quit the system
+        '''
+        request = "quit"
+        inform = self.neighbour
+        inform.append(object)
+        socketObj = socket(AF_INET, SOCK_STREAM)
         
     def handleService(self):
         '''
@@ -87,7 +100,8 @@ class Client:
                      
             request = raw_input(prompt)
             
-            if request == 'q':
+            if request == 'quit':
+                self.quit()
                 break
             elif request == 'list':
                 self.listFile()
@@ -112,11 +126,11 @@ class Client:
             
             while True:
                 data = connection.recv(1024)
-                
+                data = data.split(' ')
                 if not data: break
                 else:
-                    if data == 'join':
-                        self.neighbour.append(address)                        
+                    if data[0] == 'join':
+                        self.neighbour.append([address[0], data[1]])                        
                         connection.send('success') 
             
         sockObj.close()
