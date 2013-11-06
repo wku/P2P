@@ -22,7 +22,7 @@ def register(address, peerList):
             return peer
         else:                                                           #duplicated address
             return 'already registered'
-    
+
 if __name__ == '__main__':
     myHost = ''
     myPort = 50007
@@ -48,5 +48,9 @@ if __name__ == '__main__':
                 connection.send(outcome)                #respond the peer
                 print peerList                          #print the peer already in the system
                 break                                   #finish the response this time
+            elif data[0] == 'quit':
+                peerList.remove([address[0], data[1]])
+                print "client:[%s,%s] quit" % (address[0], data[1])
+                break
         connection.close()
             
