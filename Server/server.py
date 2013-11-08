@@ -10,11 +10,11 @@ def register(address, peerList):
     '''
     register a new peer into the system
     '''
-    if len(peerList) == 0:                  #there is no peer in the system
+    print "register ", address               #store newly coming peer
+    if len(peerList) == 0:                  #there is no peer in the system 
         peerList.append(address)
         return "success"
     else:
-        print "at register\n"               #store newly coming peer
         if address not in peerList:
             peerList.append(address)
             peer = peerList[random.randint(0,len(peerList) - 2)]        #randomly choose peer from the list
@@ -38,7 +38,7 @@ if __name__ == '__main__':
         while True:
             data = connection.recv(1024)
             data = data.split(' ')
-            print data
+            print "get request ", data
             if not data: 
                 break
             if data[0] == 'join':                       #one peer wants to join the system
@@ -46,11 +46,12 @@ if __name__ == '__main__':
                 address[1] = data[1]                     #switch listening port over the connection port number
                 outcome = register(address, peerList)                
                 connection.send(outcome)                #respond the peer
-                print peerList                          #print the peer already in the system
+                print "peerlist ", peerList                          #print the peer already in the system
                 break                                   #finish the response this time
             elif data[0] == 'quit':
                 peerList.remove([address[0], data[1]])
                 print "client:[%s,%s] quit" % (address[0], data[1])
+                print "peerlist", peerList
                 break
         connection.close()
             

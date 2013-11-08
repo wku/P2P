@@ -22,7 +22,11 @@ class Client:
         self.neighbour = []                     #neighbour list
         self.signal = False
         
-    def isConfirmed(self, address):  
+    def isConfirmed(self, address):
+        '''
+        connect the neighbor
+        @param address: list of host name and port number
+        '''
         sockObj = socket(AF_INET, SOCK_STREAM)
         message = 'join' + ' ' + str(self.myAddress[1])     #send the listening port number
         
@@ -62,7 +66,7 @@ class Client:
         
         while True:
             response = sockObj.recv(1024)                       #response from server
-            
+
             if response == 'success':
                 sockObj.close()
                 return True                                 #join successfully
@@ -85,7 +89,10 @@ class Client:
         '''
         quit the system
         '''
-        request = "quit" + ' ' + str(self.myAddress[1])
+        if len(self.neighbour) > 0:
+            request = "quit" + ' ' + str(self.myAddress[1]) + ' ' + self.neighbour[0][0] + ' ' + self.neighbour[0][1]
+        else:
+            request = "quit" + ' ' + str(self.myAddress[1])         #if there is just one peer
         inform = self.neighbour
         inform.append([self.serverHost, self.serverPort])       #list of neighbors and a server to be informed later
         
@@ -93,7 +100,6 @@ class Client:
             socketObj = socket(AF_INET, SOCK_STREAM)
             socketObj.connect((address[0], int(address[1])))                               #connect to the remote host
             socketObj.send(request)                                  #send quit request
-            response = socketObj.recv(1024)                          #get response
             print "disconnected with %s %s successfully" % (address[0], address[1])
             socketObj.close()                                        #close the connection
         print "quit P2P system successfully"
@@ -103,10 +109,8 @@ class Client:
         '''
         Handle the service request such as share and get from console
         '''
-        print "main thread"
         while True:
-            prompt = "p2p system\n"
-                     
+            prompt = "Please input the command\n"
             request = raw_input(prompt)
             
             if request == 'quit':
@@ -114,20 +118,42 @@ class Client:
                 break
             elif request == 'list':
                 self.listFile()
-                
-    def handleRequest(self):
+            elif request == 'print':
+                self.printNeighbor()
+    
+    def handleJoin(self, data, address, connection):
         '''
-        handle the request from neighbors 
+        handle the join request from other neighbors
+        '''           
+        print "host", address, "wants to ", data[0] 
+        self.neighbour.append([address[0], data[1]])                        
+        connection.send('success')
+        print "host", address, "join successfully"
+                        
+    def handleQuit(self, data, address):
         '''
-        print "child thread"
-        time.sleep(1)
-        sockObj = socket(AF_INET, SOCK_STREAM)              #initialize the socket object
-        sockObj.bind(self.myAddress)                    #bind it to client's address
-        sockObj.listen(5)                               #start to listen the coming message            
+        handle the quit request from other neighbors
+        '''
+        print "neighbor", address, "wants to quit"
+        if (data[2], int(data[3])) != self.myAddress:     
+            self.neighbour.append([data[2], data[3]])
+            self.isConfirmed([data[2], data[3]])
+        self.neighbour.remove([address[0], data[1]])    #remove the record of the peer
+        print "peer:[%s,%s] quit" % (address[0], data[1])
+    
+    def printNeighbor(self):
+        '''
+        print the neighbor list
+        '''
+        print self.neighbour
         
+    def handleRequest(self):
+        sockObj = socket(AF_INET, SOCK_STREAM)              #initialize the socket object
+        sockObj.bind(self.myAddress)                        #bind it to client's address
+        sockObj.listen(5)                                   #start to listen the coming message 
         while True:
             connection, address = sockObj.accept()
-            print "Client connected " , address
+            print "Client connected ", address
             
             while True:
                 data = connection.recv(1024)
@@ -135,24 +161,22 @@ class Client:
                 if not data: break
                 else:
                     if data[0] == 'join':
-                        self.neighbour.append([address[0], data[1]])                        
-                        connection.send('success')
+                        self.handleJoin(data, address, connection)
                         break
                     elif data[0] == 'quit':
-                        self.neighbour.remove([address[0], data[1]])    #remove the record of the peer
-                        print "peer:[%s,%s] quit" % (address[0], data[1])
+                        self.handleQuit(data, address)
                         break
             connection.close()
-        sockObj.close()           
+        sockObj.close()                       
+        
     def main(self):
         '''
         main function
         '''
         if self.join():                                     #request to join the system
-            print "join successfully"
-            thread.start_new_thread(self.handleRequest(), ())
-            self.handleService()                            #handle the user request
+            print "join successfully"    
+            thread.start_new_thread(self.handleRequest, ()) #use child thread to handle request from neighbors
+            self.handleService()                                #handle the request from user
         else:
-            print "cann't connect the server"
-
+            print "fail to join"
         
